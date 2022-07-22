@@ -1,12 +1,11 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import useDispose from '@/hooks/useDispose';
-import { pointRandom, random } from '@/utils';
-import styles from './index.less';
 import useMouseEvent from '@/hooks/useMouseEvent';
+import styles from './index.less';
 
-export default function Loader() {
+export default function Animate() {
   const bodyRef = useRef<any>(null);
   const sceneRef = useRef(new THREE.Scene()).current; // 场景：场景只实例一次，避免内存泄漏
   const cameraRef = useRef(new THREE.PerspectiveCamera()).current; // 透射相机：物体大小与视锥体角度有关
@@ -17,12 +16,16 @@ export default function Loader() {
   const animateIDRef = useRef<any>();
   const lightsRef = useRef<any>([]).current; // 灯光组
   const floorRef = useRef<any[]>([]); // 地板
+  const clockRef = useRef(new THREE.Clock());
+  const mixerRef = useRef<any>();
+  const [load, setLoad] = useState<number>(0);
 
   // hooks 相机Event
   const { onMouseDown, onMouseUp, onMouseMove, hypotenuseRef, onWheel } =
     useMouseEvent({
       cameraRef,
       hypotenuse: 40,
+      onTop: true,
     });
 
   // cb
@@ -31,86 +34,29 @@ export default function Loader() {
     cameraRef.updateProjectionMatrix();
     renderRef.setSize(window.innerWidth, window.innerHeight);
   }, [cameraRef, renderRef]);
-  /*
-  const loaderFBXAnya = useCallback(() => {
-    const loader = new FBXLoader();
-    loader.load(
-      'fbx/anya/anya-spyfamily-and-timelapse-video.fbx',
-      (group: any) => {
-        group.position.set(0, 0, 0);
-        group.scale.set(0.05, 0.05, 0.05);
-
-        const textureLoader = new THREE.TextureLoader();
-        const faceTexture = textureLoader.load(
-          'fbx/anya/textures/Anya_Face_dif.png',
-        );
-        const hairTexture = textureLoader.load(
-          'fbx/anya/textures/Anya_hair_dif.png',
-        );
-        const bodyTexture = textureLoader.load(
-          'fbx/anya/textures/Anya_cos_dif.png',
-        );
-        const clothTexture = textureLoader.load(
-          'fbx/anya/textures/cloth.tga.png',
-        );
-        group.children[0].material = new THREE.MeshBasicMaterial({
-          map: faceTexture,
-        });
-        group.children[1].material = new THREE.MeshBasicMaterial({
-          map: bodyTexture,
-        });
-        group.children[2].material = new THREE.MeshBasicMaterial({
-          map: hairTexture,
-        });
-        group.children[4].material = new THREE.MeshBasicMaterial({
-          map: clothTexture,
-        });
-        intoMeshFn(group);
-      },
-    );
-  }, []);
-  */
-  /*
-  const loaderFBXYor = useCallback(() => {
-    const loader = new FBXLoader();
-    loader.load('fbx/yor/yor.fbx', (group: any) => {
-      group.position.set(0, 0, 0);
-      group.scale.set(0.05, 0.05, 0.05);
-
-      const textureLoader = new THREE.TextureLoader();
-      const envTexture = textureLoader.load('fbx/yor/yor.thumb.jpeg');
-      const faceTexture = textureLoader.load(
-        'fbx/yor/textures/faceall.tga.png',
-      );
-      const hairTexture = textureLoader.load('fbx/yor/textures/hair.tga.png');
-      const bodyTexture = textureLoader.load('fbx/yor/textures/body.tga.png');
-      const clothTexture = textureLoader.load('fbx/yor/textures/cloth.tga.png');
-      group.children[0].material = new THREE.MeshBasicMaterial({
-        map: faceTexture,
-        alphaMap: envTexture,
-        combine: THREE.MixOperation,
-      });
-      group.children[1].material = new THREE.MeshBasicMaterial({
-        map: bodyTexture,
-      });
-      group.children[2].material = new THREE.MeshBasicMaterial({
-        map: hairTexture,
-      });
-      group.children[4].material = new THREE.MeshBasicMaterial({
-        map: clothTexture,
-      });
-      intoMeshFn(group);
-    });
-  }, []);
-  */
   const loaderFBX = useCallback(() => {
-    const loader = new FBXLoader();
-    loader.load('fbx/static/gtx.fbx', (group: any) => {
-      group.position.set(0, 0, 0);
+    const manager = new THREE.LoadingManager();
+    manager.onLoad = () => setLoad(100);
+    manager.onStart = (_: never, loaded: number, total: number) =>
+      setLoad(loaded / total);
+    manager.onProgress = (_: never, loaded: number, total: number) =>
+      setLoad(loaded / total);
+
+    const loader = new FBXLoader(manager);
+    loader.load('fbx/static/gtx2.fbx', (group: any) => {
+      group.position.set(0, 0, -4);
       group.scale.set(0.05, 0.05, 0.05);
-      // console.log('group', group);
+      animateMixer(group);
       intoMeshFn(group);
     });
+  }, []);
+  // 动画播放
+  const animateMixer = useCallback((obj) => {
+    mixerRef.current = new THREE.AnimationMixer(obj);
+    const animated = mixerRef.current.clipAction(obj.animations[0]);
+    // animated.setLoop(true);
+    animated.play();
+    return obj;
   }, []);
   const intoMeshFn = useCallback(
     (mesh) => {
@@ -122,6 +68,9 @@ export default function Loader() {
   const initFn = useCallback(() => {
     const renderRefFn = () => {
       // console.log('renderRefFn', renderRef);
+
+      // 设置物理像素
+      renderRef.setPixelRatio(window.devicePixelRatio);
 
       // 开启阴影
       renderRef.shadowMap.enabled = true;
@@ -138,7 +87,7 @@ export default function Loader() {
       cameraRef.aspect = window.innerWidth / window.innerHeight;
       cameraRef.near = 1;
       cameraRef.far = 1000;
-      cameraRef.position.set(0, 0, hypotenuseRef.current); // 相机的位置
+      cameraRef.position.set(0, 6, hypotenuseRef.current); // 相机的位置
       cameraRef.lookAt(0, 0); // 相机的焦点
       cameraRef.updateProjectionMatrix(); // 更新相机投影矩阵
     };
@@ -149,6 +98,11 @@ export default function Loader() {
   // 渲染器
   const renderSceneFn = useCallback(() => {
     renderRef.render(sceneRef, cameraRef); // 渲染相机拍摄的内容
+
+    if (mixerRef.current) {
+      const time = clockRef.current.getDelta(); // 获取当前秒数
+      mixerRef.current.update(time);
+    }
 
     // 弧度转角度 = 弧度 / 180 *  PI
     // meshsRef.forEach((item: any) => {
@@ -161,7 +115,7 @@ export default function Loader() {
   // 灯光：用于照射投影材质
   const createLightFn = useCallback(() => {
     const light = new THREE.DirectionalLight(0xffffff, 1); // 平行光：模拟太阳光照射投影
-    light.position.set(100, 100, 100);
+    light.position.set(0, 200, 100);
     light.castShadow = true; // 平行光投射阴影
 
     // const light = new THREE.AmbientLight(0xffffff, 0.5); // 环境光
@@ -199,7 +153,7 @@ export default function Loader() {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.receiveShadow = true; // 接收阴影
       mesh.position.set(...vectors);
-      mesh.rotation.x = (-75 / 180) * Math.PI;
+      mesh.rotation.x = (-90 / 180) * Math.PI;
       return mesh;
     };
 
@@ -225,13 +179,14 @@ export default function Loader() {
     window.addEventListener('resize', onWindowResize, false);
 
     bodyRef.current?.append(renderRef?.domElement);
-    // loaderFBXAnya();
-    // loaderFBXYor();
-    loaderFBX();
+
     initFn();
     renderSceneFn();
     createLightFn();
     createFloor();
+    loaderFBX();
+    // loaderFBXAnya();
+    // loaderFBXYor();
 
     // 释放内存
     return () => {

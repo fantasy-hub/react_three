@@ -4,29 +4,35 @@ import type { MouseEvent, WheelEvent } from 'react';
 interface IUuseMouseEvent {
   cameraRef: any;
   hypotenuse?: number;
+  onTop?: boolean;
 }
 
 const useMouseEvent = (props: IUuseMouseEvent) => {
-  const { cameraRef, hypotenuse = 20 } = props;
+  const { cameraRef, hypotenuse = 20, onTop } = props;
   const isDownRef = useRef(false);
   const hypotenuseRef = useRef<number>(hypotenuse); // 半径：斜边长度
   // 移动过程中改变的是相机与坐标系的夹角
   // 角度：在物体的正前方，转弧度：RRef.current / 180 * Math.PI
   const angleRef = useRef<number>(0); // 角度：相机与坐标系的夹角
 
-  const positionChange = useCallback((event: any, fixY = false) => {
-    const { y } = cameraRef.position;
-    const { movementY } = event;
+  const positionChange = useCallback(
+    (event: any, config = { fixY: false }) => {
+      const { fixY } = config;
+      const { y } = cameraRef.position;
+      const { movementY } = event;
 
-    const cos = Math.cos((angleRef.current / 180) * Math.PI); // 角度转弧度：angleRef.current / 180度 * π，即求角度里有几个180度
-    const sin = Math.sin((angleRef.current / 180) * Math.PI);
+      const cos = Math.cos((angleRef.current / 180) * Math.PI); // 角度转弧度：angleRef.current / 180度 * π，即求角度里有几个180度
+      const sin = Math.sin((angleRef.current / 180) * Math.PI);
 
-    const _x = hypotenuseRef.current * cos;
-    const _y = fixY ? y : y + movementY * 0.1;
-    const _z = hypotenuseRef.current * sin;
-    cameraRef.position.set(_x, _y, _z);
-    cameraRef.lookAt(0, 0, 0);
-  }, []);
+      const _x = hypotenuseRef.current * cos;
+      let _y = fixY ? y : y + movementY * 0.1;
+      const _z = hypotenuseRef.current * sin;
+      if (onTop && _y < 5) _y = 5; // 鼠标只能在地板上面
+      cameraRef.position.set(_x, _y, _z);
+      cameraRef.lookAt(0, 0, 0);
+    },
+    [props],
+  );
 
   const onMouseDown = useCallback(() => (isDownRef.current = true), []);
   const onMouseUp = useCallback(() => (isDownRef.current = false), []);
@@ -46,7 +52,7 @@ const useMouseEvent = (props: IUuseMouseEvent) => {
     const { deltaY } = event;
     if (deltaY > 0) hypotenuseRef.current += 1;
     else hypotenuseRef.current -= 1;
-    positionChange(event, true);
+    positionChange(event, { fixY: true });
     */
 
     const { deltaY } = event;

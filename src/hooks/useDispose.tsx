@@ -19,8 +19,8 @@ const useDispose = (props: IUseDisposeProps) => {
   const disposeAll = useCallback(() => {
     // 释放网格的盒子
     meshsRef.forEach((item: any) => {
-      item.geometry.dispose();
-      item.material.dispose();
+      item?.geometry?.dispose();
+      item?.material?.dispose();
 
       sceneRef.remove(item);
     });
