@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import useDispose from '@/hooks/useDispose';
 import useMouseEvent from '@/hooks/useMouseEvent';
 import styles from './index.less';
@@ -50,6 +51,27 @@ export default function Animate() {
       intoMeshFn(group);
     });
   }, []);
+  const loaderGLTF = useCallback(() => {
+    const manager = new THREE.LoadingManager();
+    manager.onLoad = () => setLoad(100);
+    manager.onStart = (_: never, loaded: number, total: number) =>
+      setLoad(loaded / total);
+    manager.onProgress = (_: never, loaded: number, total: number) =>
+      setLoad(loaded / total);
+
+    const loader = new GLTFLoader(manager);
+    loader.load('fbx/static/i10.gltf', (obj: any) => {
+      console.log('obj', obj);
+      // obj.position.set(0, 0, -4);
+      obj.scene.scale.set(2,2,2);
+      
+      mixerRef.current = new THREE.AnimationMixer(obj.scene);
+      const animated = mixerRef.current.clipAction(obj.animations[0]);
+      // animated.setLoop(true);
+      animated.play();
+      intoMeshFn(obj.scene)
+    });
+  }, [])
   // 动画播放
   const animateMixer = useCallback((obj) => {
     mixerRef.current = new THREE.AnimationMixer(obj);
@@ -185,6 +207,7 @@ export default function Animate() {
     createLightFn();
     createFloor();
     loaderFBX();
+    // loaderGLTF()
     // loaderFBXAnya();
     // loaderFBXYor();
 
