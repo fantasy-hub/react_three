@@ -19,6 +19,7 @@ export default function Animate() {
   const floorRef = useRef<any[]>([]); // 地板
   const clockRef = useRef(new THREE.Clock());
   const mixerRef = useRef<any>();
+  const soundRef = useRef<any>();
   const [load, setLoad] = useState<number>(0);
 
   // hooks 相机Event
@@ -63,23 +64,43 @@ export default function Animate() {
     loader.load('fbx/static/i10.gltf', (obj: any) => {
       console.log('obj', obj);
       // obj.position.set(0, 0, -4);
-      obj.scene.scale.set(2,2,2);
-      
+      obj.scene.scale.set(2, 2, 2);
+
       mixerRef.current = new THREE.AnimationMixer(obj.scene);
       const animated = mixerRef.current.clipAction(obj.animations[0]);
       // animated.setLoop(true);
       animated.play();
-      intoMeshFn(obj.scene)
+      intoMeshFn(obj.scene);
     });
-  }, [])
+  }, []);
   // 动画播放
   const animateMixer = useCallback((obj) => {
+    console.log('animateMixer', obj);
     mixerRef.current = new THREE.AnimationMixer(obj);
     const animated = mixerRef.current.clipAction(obj.animations[0]);
     // animated.setLoop(true);
     animated.play();
     return obj;
   }, []);
+  // 加载一个 sound 并将其设置为 Audio 对象的缓冲区
+  const createAudio = useCallback(() => {
+    // 创建一个 AudioListener 并将其添加到 camera 中
+    const listener = new THREE.AudioListener();
+    cameraRef.add(listener);
+    // 创建一个全局 audio 源
+    soundRef.current = new THREE.Audio(listener);
+
+    const loader = new THREE.AudioLoader();
+    loader.load(
+      'mp3/LiSA&Uru-再会(produced by Ayase).mp3',
+      (buffer: Buffer) => {
+        soundRef.current.setBuffer(buffer);
+        soundRef.current.setLoop(true);
+        soundRef.current.setVolume(0.4);
+        soundRef.current.play();
+      },
+    );
+  }, [soundRef]);
   const intoMeshFn = useCallback(
     (mesh) => {
       sceneRef.add(mesh); // 添加到场景
@@ -137,7 +158,7 @@ export default function Animate() {
   // 灯光：用于照射投影材质
   const createLightFn = useCallback(() => {
     const light = new THREE.DirectionalLight(0xffffff, 1); // 平行光：模拟太阳光照射投影
-    light.position.set(0, 200, 100);
+    light.position.set(100, 200, 100);
     light.castShadow = true; // 平行光投射阴影
 
     // const light = new THREE.AmbientLight(0xffffff, 0.5); // 环境光
@@ -198,6 +219,9 @@ export default function Animate() {
     floorRef,
   });
   useEffect(() => {
+    const div = document.createElement('div');
+    div.click();
+
     window.addEventListener('resize', onWindowResize, false);
 
     bodyRef.current?.append(renderRef?.domElement);
@@ -206,14 +230,16 @@ export default function Animate() {
     renderSceneFn();
     createLightFn();
     createFloor();
-    loaderFBX();
-    // loaderGLTF()
+    createAudio();
+    // loaderFBX();
+    loaderGLTF();
     // loaderFBXAnya();
     // loaderFBXYor();
 
     // 释放内存
     return () => {
       disposeAll();
+      soundRef.current.stop();
     };
   }, []);
 
