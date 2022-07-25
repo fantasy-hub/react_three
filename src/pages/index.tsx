@@ -1,7 +1,8 @@
 type IndexPageProps = Record<string, any>;
 
 const IndexPage: React.FC<IndexPageProps> = (props) => {
-  return <>{props?.children}</>;
+  const { children } = props;
+  return <>{children}</>;
 };
 
 export default IndexPage;

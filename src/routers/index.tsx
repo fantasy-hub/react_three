@@ -12,7 +12,7 @@ const routers: IRoute[] = [
       { path: '/rect', component: '@/pages/rect' },
       { path: '/loader', component: '@/pages/loader' },
       { path: '/animate', component: '@/pages/animate' },
-      { component: '@/pages/404' },
+      // { component: '@/pages/404' },
     ],
   },
 ];
