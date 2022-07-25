@@ -12,4 +12,5 @@ export default defineConfig({
   webpack5: {},
   esbuild: {},
   dynamicImport: {},
+  publicPath: process.env.NODE_ENV === 'production' ? './' : '/',
 });
