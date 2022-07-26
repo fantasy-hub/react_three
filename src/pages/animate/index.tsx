@@ -66,10 +66,18 @@ export default function Animate() {
       // obj.position.set(0, 0, -4);
       obj.scene.scale.set(2, 2, 2);
 
+      // 添加阴影
+      obj.scene.traverse(function (node: any) {
+        if (node.isMesh) {
+          node.castShadow = true;
+        }
+      });
+      
       mixerRef.current = new THREE.AnimationMixer(obj.scene);
       const animated = mixerRef.current.clipAction(obj.animations[0]);
       // animated.setLoop(true);
       animated.play();
+      
       intoMeshFn(obj.scene);
     });
   }, []);
@@ -122,6 +130,9 @@ export default function Animate() {
         bodyRef.current?.offsetWidth,
         bodyRef.current?.offsetHeight,
       );
+      
+      // 修改背景色
+      renderRef.setClearColor('#FAF0E6', 1.0);
     };
     const cameraRefRefFn = () => {
       cameraRef.fov = 45;
