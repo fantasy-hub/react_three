@@ -169,7 +169,7 @@ export default function Animate() {
   // 灯光：用于照射投影材质
   const createLightFn = useCallback(() => {
     const light = new THREE.DirectionalLight(0xffffff, 1); // 平行光：模拟太阳光照射投影
-    light.position.set(100, 200, 100);
+    light.position.set(0, 200, 100);
     light.castShadow = true; // 平行光投射阴影
 
     // const light = new THREE.AmbientLight(0xffffff, 0.5); // 环境光
@@ -179,10 +179,10 @@ export default function Animate() {
     // light.position.set(100, 200, 200);
 
     // 设置投影
-    // light.shadow.camera.top = -10;
-    // light.shadow.camera.left = 10;
-    // light.shadow.camera.right = -10;
-    // light.shadow.camera.bottom = 10;
+    light.shadow.camera.top = -10;
+    light.shadow.camera.left = 10;
+    light.shadow.camera.right = -10;
+    light.shadow.camera.bottom = 10;
     // light.shadow.mapSize.width = 1024; // 烧显卡，贴图数量会被增加
     // light.shadow.mapSize.height = 1024;
 
