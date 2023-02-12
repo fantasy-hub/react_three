@@ -5,7 +5,7 @@ const routers: IRoute[] = [
     path: '/',
     component: '@/pages/index',
     routes: [
-      { path: '/', component: '@/pages/index' },
+      { path: '/', component: '@/pages/animate' },
       { path: '/basic', component: '@/pages/basic' },
       { path: '/light', component: '@/pages/light' },
       { path: '/shadow', component: '@/pages/shadow' },
